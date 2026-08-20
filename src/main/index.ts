@@ -9,12 +9,38 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 let runtime: HarnessRuntime | undefined
 
 /** Prefer the sibling source checkout while developing; releases use installed dsh. */
-function harnessCommand(): { command: string; args?: readonly string[] } {
+function pnpmCommand(): string | undefined {
+  const pathEntries = (process.env.PATH ?? '').split(path.delimiter)
+  const candidates = [
+    ...pathEntries.map(entry => path.join(entry, 'pnpm')),
+    '/opt/homebrew/bin/pnpm',
+    '/usr/local/bin/pnpm',
+  ]
+  return candidates.find(candidate => existsSync(candidate))
+}
+
+function sourceHarnessCommand(directory: string): { command: string; args: readonly string[] } | undefined {
+  const pnpm = pnpmCommand()
+  if (pnpm === undefined || !existsSync(path.join(directory, 'package.json'))) return undefined
+  return {
+    // `pnpm dsh` uses the source launcher's resolver, which is required for
+    // workspace plugin imports in the current Harness development checkout.
+    command: pnpm,
+    args: ['--dir', directory, 'dsh'],
+  }
+}
+
+function harnessCommand(): { command: string; args?: readonly string[]; env?: NodeJS.ProcessEnv } {
   const configured = process.env.DSH_DESKTOP_COMMAND
   if (configured !== undefined && configured !== '') return { command: configured }
-  const siblingCheckout = path.resolve(app.getAppPath(), '../deepseek-harness')
-  if (!app.isPackaged && existsSync(path.join(siblingCheckout, 'package.json'))) {
-    return { command: 'pnpm', args: ['--dir', siblingCheckout, 'dsh'] }
+  const sourceCandidates = [
+    path.resolve(app.getAppPath(), '../deepseek-harness'),
+    // A local directory package lives at release/<arch>/<app>.app/Contents.
+    path.resolve(path.dirname(process.execPath), '../../../../../../deepseek-harness'),
+  ]
+  for (const directory of sourceCandidates) {
+    const sourceCommand = sourceHarnessCommand(directory)
+    if (sourceCommand !== undefined) return sourceCommand
   }
   return { command: 'dsh' }
 }
@@ -25,7 +51,7 @@ function rendererUrl(): string {
   return `file://${path.join(here, '../../renderer/index.html')}`
 }
 
-function createWindow(): BrowserWindow {
+async function createWindow(): Promise<BrowserWindow> {
   const window = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -44,7 +70,7 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' }
   })
   installUpdater(window)
-  void window.loadURL(rendererUrl())
+  await window.loadURL(rendererUrl())
   return window
 }
 
@@ -58,8 +84,8 @@ async function bootHarness(window: BrowserWindow): Promise<void> {
   }
 }
 
-app.whenReady().then(() => {
-  const window = createWindow()
+app.whenReady().then(async () => {
+  const window = await createWindow()
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     {
       label: 'DeepSeek Harness',
@@ -84,8 +110,9 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => runtime?.stop())
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    const window = createWindow()
-    if (runtime === undefined) void bootHarness(window)
-    else void window.loadURL(runtime.url)
+    void createWindow().then(window => {
+      if (runtime === undefined) void bootHarness(window)
+      else void window.loadURL(runtime.url)
+    })
   }
 })

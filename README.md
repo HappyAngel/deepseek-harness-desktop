@@ -5,7 +5,7 @@ The independent Electron desktop client for [DeepSeek Harness](https://github.co
 ## Prerequisites
 
 - Node.js 22 or newer and pnpm 10 or newer.
-- A working `dsh` command on `PATH` for packaged releases. Install or build DeepSeek Harness first; the desktop app starts it with `dsh web --no-open --port 0` and waits for its loopback ready URL. During development it automatically uses a sibling `../deepseek-harness` checkout through `pnpm dsh`.
+- A working `dsh` command on `PATH` for packaged releases. Install or build DeepSeek Harness first; the desktop app starts it with `dsh web --port 0` and waits for its loopback ready URL. During development it automatically uses a sibling `../deepseek-harness` checkout through its official `pnpm dsh` source launcher.
 
 For a development checkout where the command has another name, set `DSH_DESKTOP_COMMAND` to that executable before starting the application.
 

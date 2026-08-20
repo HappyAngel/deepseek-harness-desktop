@@ -13,6 +13,7 @@ export interface HarnessRuntime {
 export interface HarnessCommand {
   command: string
   args?: readonly string[]
+  env?: NodeJS.ProcessEnv
 }
 
 /** Extract the harness-owned ready URL from accumulated process output. */
@@ -21,11 +22,12 @@ export function readReadyUrl(output: string): string | undefined {
 }
 
 /** Start `dsh web` and resolve only when its own ready URL is printed. */
-export function startHarnessRuntime({ command, args = [] }: HarnessCommand): Promise<HarnessRuntime> {
+export function startHarnessRuntime({ command, args = [], env }: HarnessCommand): Promise<HarnessRuntime> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, [...args, 'web', '--no-open', '--port', '0'], {
+    const child = spawn(command, [...args, 'web', '--port', '0'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      env: { ...process.env, ...env },
     })
     let settled = false
     let output = ''

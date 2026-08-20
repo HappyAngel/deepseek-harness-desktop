@@ -1,49 +1,10 @@
 import { app, BrowserWindow, Menu, shell } from 'electron'
-import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { startHarnessRuntime, type HarnessRuntime } from './runtime.js'
+import { resolveHarnessUrl } from './harness-url.js'
 import { installUpdater } from './updater.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-let runtime: HarnessRuntime | undefined
-
-/** Prefer the sibling source checkout while developing; releases use installed dsh. */
-function pnpmCommand(): string | undefined {
-  const pathEntries = (process.env.PATH ?? '').split(path.delimiter)
-  const candidates = [
-    ...pathEntries.map(entry => path.join(entry, 'pnpm')),
-    '/opt/homebrew/bin/pnpm',
-    '/usr/local/bin/pnpm',
-  ]
-  return candidates.find(candidate => existsSync(candidate))
-}
-
-function sourceHarnessCommand(directory: string): { command: string; args: readonly string[] } | undefined {
-  const pnpm = pnpmCommand()
-  if (pnpm === undefined || !existsSync(path.join(directory, 'package.json'))) return undefined
-  return {
-    // `pnpm dsh` uses the source launcher's resolver, which is required for
-    // workspace plugin imports in the current Harness development checkout.
-    command: pnpm,
-    args: ['--dir', directory, 'dsh'],
-  }
-}
-
-function harnessCommand(): { command: string; args?: readonly string[]; env?: NodeJS.ProcessEnv } {
-  const configured = process.env.DSH_DESKTOP_COMMAND
-  if (configured !== undefined && configured !== '') return { command: configured }
-  const sourceCandidates = [
-    path.resolve(app.getAppPath(), '../deepseek-harness'),
-    // A local directory package lives at release/<arch>/<app>.app/Contents.
-    path.resolve(path.dirname(process.execPath), '../../../../../../deepseek-harness'),
-  ]
-  for (const directory of sourceCandidates) {
-    const sourceCommand = sourceHarnessCommand(directory)
-    if (sourceCommand !== undefined) return sourceCommand
-  }
-  return { command: 'dsh' }
-}
 
 function rendererUrl(): string {
   const devUrl = process.env.DSH_DESKTOP_RENDERER_URL
@@ -74,10 +35,15 @@ async function createWindow(): Promise<BrowserWindow> {
   return window
 }
 
-async function bootHarness(window: BrowserWindow): Promise<void> {
+async function connectHarness(window: BrowserWindow): Promise<void> {
   try {
-    runtime = await startHarnessRuntime(harnessCommand())
-    await window.loadURL(runtime.url)
+    const url = resolveHarnessUrl(process.env.DSH_DESKTOP_URL)
+    const response = await fetch(url, { signal: AbortSignal.timeout(5_000) })
+    const html = await response.text()
+    if (!response.ok || !html.includes('window.__DSH_BOOT__')) {
+      throw new Error(`${url} is not a DeepSeek Harness Web service`)
+    }
+    await window.loadURL(url)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     await window.webContents.executeJavaScript(`window.showHarnessStartupError?.(${JSON.stringify(message)})`)
@@ -101,18 +67,16 @@ app.whenReady().then(async () => {
     { role: 'viewMenu' },
     { role: 'windowMenu' },
   ]))
-  void bootHarness(window)
+  void connectHarness(window)
 })
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
-app.on('before-quit', () => runtime?.stop())
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     void createWindow().then(window => {
-      if (runtime === undefined) void bootHarness(window)
-      else void window.loadURL(runtime.url)
+      void connectHarness(window)
     })
   }
 })

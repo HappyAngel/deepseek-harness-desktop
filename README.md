@@ -1,13 +1,13 @@
 # DeepSeek Harness Desktop
 
-The independent Electron desktop client for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It starts a local Harness Web runtime and displays its existing UI in a native window, so conversations, workspace tools, settings, plugins, and all feature UI stay exactly aligned with the Harness release instead of being reimplemented in a second frontend.
+The independent Electron desktop client for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It connects to an already-running Harness Web service and displays its existing UI in a native window, so conversations, workspace tools, settings, plugins, and all feature UI stay exactly aligned with the Harness release instead of being reimplemented in a second frontend.
 
 ## Prerequisites
 
 - Node.js 22 or newer and pnpm 10 or newer.
-- A working `dsh` command on `PATH` for packaged releases. Install or build DeepSeek Harness first; the desktop app starts it with `dsh web --port 0` and waits for its loopback ready URL. During development it automatically uses a sibling `../deepseek-harness` checkout through its official `pnpm dsh` source launcher.
+- A running Harness Web service. By default, the desktop client connects to `http://127.0.0.1:3080`, the standard `dsh web` address.
 
-For a development checkout where the command has another name, set `DSH_DESKTOP_COMMAND` to that executable before starting the application.
+For a service on another address, set `DSH_DESKTOP_URL`, for example `DSH_DESKTOP_URL=http://127.0.0.1:3081 pnpm dev`.
 
 ## Development
 
@@ -16,7 +16,7 @@ pnpm install
 pnpm dev
 ```
 
-The loading view stays local to Electron until Harness is ready, then the window switches to the loopback web UI. Closing the desktop app stops only the `dsh web` child it started.
+The loading view stays local to Electron while it verifies the Harness service, then the window switches to the web UI. Closing the desktop app does not stop the service.
 
 ## Build and package
 

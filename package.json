@@ -1,6 +1,6 @@
 {
   "name": "deepseek-harness-desktop",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Desktop client for DeepSeek Harness",
   "author": "DeepSeek Harness contributors",
   "private": true,

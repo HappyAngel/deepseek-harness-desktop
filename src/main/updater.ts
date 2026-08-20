@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, Notification } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import updaterPackage from 'electron-updater'
 import { UPDATE_STATE_CHANNEL, type UpdateState } from '../shared/ipc.js'
+
+const { autoUpdater } = updaterPackage
 
 const windows = new Set<BrowserWindow>()
 let handlersInstalled = false

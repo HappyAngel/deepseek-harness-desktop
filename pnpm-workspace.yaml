@@ -1,0 +1,6 @@
+autoInstallPeers: false
+strictPeerDependencies: true
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true

@@ -1,0 +1,76 @@
+{
+  "name": "deepseek-harness-desktop",
+  "version": "0.1.0",
+  "description": "Desktop client for DeepSeek Harness",
+  "author": "DeepSeek Harness contributors",
+  "private": true,
+  "type": "module",
+  "main": "out/main/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HappyAngel/deepseek-harness-desktop.git"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.main.json --watch\" \"tsc -p tsconfig.preload.json --watch\" \"wait-on tcp:127.0.0.1:5173 out/main/index.js out/preload/index.js && cross-env DSH_DESKTOP_RENDERER_URL=http://127.0.0.1:5173 electron .\"",
+    "build": "vite build && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json",
+    "dist": "pnpm run build && electron-builder",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.preload.json && tsc --noEmit -p tsconfig.renderer.json"
+  },
+  "build": {
+    "appId": "ai.deepseek.harness.desktop",
+    "productName": "DeepSeek Harness",
+    "files": [
+      "out/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "HappyAngel",
+        "repo": "deepseek-harness-desktop"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-builder-squirrel-windows": "^26.15.3",
+    "typescript": "^5.8.0",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.0",
+    "wait-on": "^8.0.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  }
+}

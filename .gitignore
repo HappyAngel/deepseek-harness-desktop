@@ -1,0 +1,6 @@
+node_modules/
+dist/
+renderer/
+out/
+release/
+.DS_Store

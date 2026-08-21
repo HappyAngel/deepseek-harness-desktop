@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { resolveHarnessUrl } from './harness-url.js'
-import { installUpdater } from './updater.js'
+import { installHarnessUpdater } from './harness-updater.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
@@ -30,7 +30,7 @@ async function createWindow(): Promise<BrowserWindow> {
     void shell.openExternal(url)
     return { action: 'deny' }
   })
-  installUpdater(window)
+  installHarnessUpdater(window)
   await window.loadURL(rendererUrl())
   return window
 }
@@ -56,9 +56,7 @@ app.whenReady().then(async () => {
     {
       label: 'DeepSeek Harness',
       submenu: [
-        { label: 'Check for Updates', click: () => void window.webContents.executeJavaScript('window.dshDesktop?.checkForUpdates()') },
-        { label: 'Download Update', click: () => void window.webContents.executeJavaScript('window.dshDesktop?.downloadUpdate()') },
-        { label: 'Install Downloaded Update', click: () => void window.webContents.executeJavaScript('window.dshDesktop?.installUpdate()') },
+        { label: 'Check Harness Updates', click: () => void window.webContents.executeJavaScript('window.dshDesktop?.checkForUpdates()') },
         { type: 'separator' },
         { role: 'quit' },
       ],

@@ -9,6 +9,8 @@ The independent Electron desktop client for [DeepSeek Harness](https://github.co
 
 For a service on another address, set `DSH_DESKTOP_URL`, for example `DSH_DESKTOP_URL=http://127.0.0.1:3081 pnpm dev`.
 
+For Harness updates, desktop needs the source Git checkout that backs the running service. During development it uses the sibling `../deepseek-harness` checkout. Set `DSH_DESKTOP_HARNESS_DIR` to use another location. The `ds` executable must be on `PATH`; the update flow finishes with `ds restart`.
+
 ## Development
 
 ```sh
@@ -29,15 +31,21 @@ pnpm dist
 
 `pnpm dist` writes platform installers to `release/`. A packaged app keeps Node integration off and exposes only a narrow, context-isolated update bridge to its local loading page; Harness itself remains responsible for its UI and API security.
 
-## GitHub Releases and updates
+## Harness updates
 
-The `electron-builder` configuration publishes installers and update metadata to the `HappyAngel/deepseek-harness-desktop` GitHub repository. Packaged apps check GitHub Releases after launch. The application menu provides the manual check; when an update is found it reports progress through native notifications, downloads only after the user chooses **Download Update** in the menu, and installs on quit.
+The application menu's **Check Harness Updates** command reads the [DeepSeek Harness GitHub Releases](https://github.com/deepseek-ai/deepseek-harness/releases) API, including prereleases. It compares the newest release with the exact Git tag checked out in `DSH_DESKTOP_HARNESS_DIR`, shows the release notes, and asks for confirmation.
 
-The [release workflow](.github/workflows/release.yml) publishes a release when a `v*` tag is pushed. It needs the repository's standard `GITHUB_TOKEN` write permission. This project does not target the App Store. For personal macOS use, GitHub Releases can distribute an unsigned build after a local Gatekeeper override; trusted in-app macOS update installation still needs a Developer ID signature and notarization. Configure the signing secrets in the workflow only when you need that fully automatic macOS path.
+On confirmation, desktop runs its bundled `scripts/update-harness.mjs`: it refuses a checkout with tracked changes, fetches the release tag, checks it out detached, runs `pnpm install --frozen-lockfile` and `pnpm run build`, then executes `ds restart`. The script can also be used directly:
+
+```sh
+node scripts/update-harness.mjs --checkout /path/to/deepseek-harness --tag dsh-v0.1.0-rc.8
+```
+
+The `electron-builder` configuration still publishes desktop installers to the `HappyAngel/deepseek-harness-desktop` GitHub repository. The [release workflow](.github/workflows/release.yml) publishes a release when a `v*` tag is pushed. It needs the repository's standard `GITHUB_TOKEN` write permission. This project does not target the App Store. For personal macOS use, GitHub Releases can distribute an unsigned build after a local Gatekeeper override; trusted in-app macOS update installation still needs a Developer ID signature and notarization. Configure the signing secrets in the workflow only when you need that fully automatic macOS path.
 
 ## Project layout
 
-- `src/main/` owns the native window, managed Harness process, and updater.
+- `src/main/` owns the native window, Harness service connection, and updater.
 - `src/preload/` exposes a minimal update-only IPC API.
 - `src/renderer/` is the small local loading/error page shown before the Harness UI is ready.
 - `src/shared/` owns IPC types shared by main, preload, and renderer.

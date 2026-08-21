@@ -1,6 +1,6 @@
 {
   "name": "deepseek-harness-desktop",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Desktop client for DeepSeek Harness",
   "author": "DeepSeek Harness contributors",
   "private": true,
@@ -27,7 +27,11 @@
     "files": [
       "out/**/*",
       "renderer/**/*",
+      "scripts/update-harness.mjs",
       "package.json"
+    ],
+    "asarUnpack": [
+      "scripts/update-harness.mjs"
     ],
     "directories": {
       "output": "release"
@@ -71,8 +75,5 @@
     "vite": "^6.2.0",
     "vitest": "^3.0.0",
     "wait-on": "^8.0.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.3.0"
   }
 }

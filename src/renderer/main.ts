@@ -7,10 +7,10 @@ const checkUpdate = document.querySelector<HTMLButtonElement>('#check-update')!
 
 function renderUpdate(state: UpdateState): void {
   if (state.kind === 'checking') status.textContent = 'Checking GitHub Releases for an update…'
-  if (state.kind === 'available') status.textContent = `Version ${state.version} is available. Choose Download in the app menu.`
-  if (state.kind === 'downloading') status.textContent = `Downloading update: ${Math.round(state.progress)}%`
-  if (state.kind === 'ready') status.textContent = `Version ${state.version} will install when you quit the app.`
-  if (state.kind === 'unavailable') status.textContent = 'You are already up to date.'
+  if (state.kind === 'available') status.textContent = `Harness ${state.version} is available (current: ${state.currentVersion}). Review the update prompt to install it.`
+  if (state.kind === 'updating') status.textContent = `Updating Harness to ${state.version}…`
+  if (state.kind === 'ready') status.textContent = `Harness ${state.version} was built and restarted.`
+  if (state.kind === 'unavailable') status.textContent = `Harness ${state.currentVersion} is up to date.`
   if (state.kind === 'error') status.textContent = `Update check failed: ${state.message}`
 }
 

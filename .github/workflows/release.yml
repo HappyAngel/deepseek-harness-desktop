@@ -9,17 +9,7 @@ permissions:
 
 jobs:
   release:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-14
-            args: --mac
-          - os: windows-latest
-            args: --win
-          - os: ubuntu-latest
-            args: --linux
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-14
     env:
       GH_TOKEN: ${{ github.token }}
       CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -36,4 +26,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: pnpm exec electron-builder ${{ matrix.args }} --publish always
+      - run: pnpm exec electron-builder --mac --publish always
